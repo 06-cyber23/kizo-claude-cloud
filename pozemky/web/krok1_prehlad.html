@@ -1,0 +1,151 @@
+<title>Nezistení vlastníci SR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: jeden stĺpec ako katastrálny výpis – súhrn hore, tabuľky pod ním, každá tabuľka vo vlastnom scroll kontajneri */
+:root{
+  --bg:#f5f7f4; --surface:#ffffff; --fg:#1c2620; --muted:#5d6b62; --line:#d9e0da;
+  --accent:#2f6b4f; --accent-soft:#e3efe8; --bar:#7fa98f;
+  --ok:#2f6b4f; --ok-bg:#e1f0e6; --warn:#8a5a00; --warn-bg:#fbefd5; --bad:#9b2c2c; --bad-bg:#f8e1e1;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121815; --surface:#19211d; --fg:#e4ebe6; --muted:#9aa9a0; --line:#2c3731;
+  --accent:#7cc39c; --accent-soft:#1f3329; --bar:#4f8a68;
+  --ok:#8fd3ab; --ok-bg:#1d3427; --warn:#f0c46b; --warn-bg:#3a2e14; --bad:#f19a9a; --bad-bg:#3d1f1f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121815; --surface:#19211d; --fg:#e4ebe6; --muted:#9aa9a0; --line:#2c3731;
+  --accent:#7cc39c; --accent-soft:#1f3329; --bar:#4f8a68;
+  --ok:#8fd3ab; --ok-bg:#1d3427; --warn:#f0c46b; --warn-bg:#3a2e14; --bad:#f19a9a; --bad-bg:#3d1f1f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--f-body);margin:0}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:28px 56px;display:flex;flex-direction:column;gap:34px}
+h1,h2{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(1.7rem,5vw,2.4rem);font-weight:800;line-height:1.1}
+h2{font-size:1.2rem;font-weight:700}
+.eyebrow{font:500 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+p{margin:0;max-width:65ch}
+.muted{color:var(--muted)}
+.head{display:flex;flex-direction:column;gap:10px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kpi{background:var(--surface);padding:14px 14px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi b{font:600 clamp(1.15rem,3.6vw,1.6rem) var(--f-mono);font-variant-numeric:tabular-nums;color:var(--accent)}
+.kpi span{font-size:.8rem;color:var(--muted)}
+@media (max-width:620px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+.steps{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+.step{display:grid;grid-template-columns:3.2rem 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
+.step .n{font:500 .85rem var(--f-mono);color:var(--muted);padding-top:2px}
+.step .t{min-width:0}
+.step .t strong{display:block;font-weight:600}
+.pill{font:500 .72rem var(--f-mono);padding:3px 8px;border-radius:99px;white-space:nowrap;letter-spacing:.03em}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:500 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface);position:sticky;top:0}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.barcell{width:30%;min-width:90px}
+.bar{height:8px;border-radius:2px;background:var(--bar)}
+.scroll{max-height:440px;overflow:auto}
+input[type=search]{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);width:100%;max-width:340px}
+input[type=search]:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+code{font:.85em var(--f-mono);background:var(--accent-soft);padding:1px 5px;border-radius:3px;word-break:break-all}
+ul{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:6px;max-width:70ch}
+.yes{color:var(--ok);font-weight:600}.no{color:var(--bad);font-weight:600}.unk{color:var(--warn);font-weight:600}
+footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="eyebrow">Projekt POZEMKY · krok 1 · zoznam SPF k 30.06.2026</div>
+    <h1>Nezistení vlastníci na Slovensku</h1>
+    <p class="muted">Spojených 7 CSV súborov Slovenského pozemkového fondu a napojený číselník katastrálnych území GKÚ (k.ú. → obec → okres → kraj).</p>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><b>4 951 162</b><span>riadkov (mien na LV)</span></div>
+    <div class="kpi"><b>1 094 661</b><span>unikátnych LV (k.ú. + LV)</span></div>
+    <div class="kpi"><b>3 520</b><span>katastrálnych území z 3 559</span></div>
+    <div class="kpi"><b>79</b><span>okresov, 8 krajov</span></div>
+  </div>
+
+  <section>
+    <h2>Stav úloh</h2>
+    <div class="steps">
+      <div class="step"><span class="n">1.1</span><div class="t"><strong>Stiahnutie a spojenie SPF zoznamu</strong><span class="muted">7 CSV (A_G … V_Z), ~350 MB. Asi 6 800 mien obsahuje znak „;“, parser to rieši.</span></div><span class="pill ok">hotové</span></div>
+      <div class="step"><span class="n">1.2</span><div class="t"><strong>Číselník k.ú. → obec → okres → kraj</strong><span class="muted">GKÚ geografické názvy, súbor GNKU.csv (CC-BY 4.0, stav 21.07.2023). Napojené 3 520 / 3 520 k.ú.</span></div><span class="pill ok">hotové</span></div>
+      <div class="step"><span class="n">1.3</span><div class="t"><strong>Overenie ZBGIS (LV, výmera, druh pozemku)</strong><span class="muted">Servery kataster., inspirews., zbgis.skgeodesy.sk z cloudu neodpovedajú. Skript je pripravený na spustenie z notebooku.</span></div><span class="pill bad">blokované</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Čo vracajú ZBGIS služby</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Služba</th><th>Číslo LV</th><th>Výmera</th><th>Druh pozemku</th><th>Overené</th></tr></thead>
+      <tbody>
+        <tr><td>ESKN REST <code>parcels_c_view</code> / <code>parcels_e_view</code></td><td class="unk">?</td><td class="unk">?</td><td class="unk">?</td><td>nie, server nedostupný</td></tr>
+        <tr><td>INSPIRE OGC API Features <code>CP.CadastralParcel</code></td><td class="no">nie</td><td class="yes">áno</td><td class="no">nie</td><td>podľa špecifikácie INSPIRE</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted">Na notebooku spusti <code>python scripts/03_zbgis_overenie.py --ku 845337</code> (Papradno, 69 546 mien na 7 120 LV). Skript vypíše atribúty vrstiev a ak nájde číslo LV, vytvorí tabuľku LV · mená · parcely · výmera · druh.</p>
+  </section>
+
+  <section>
+    <h2>Kraje</h2>
+    <div class="tbl"><table id="t-kraj"></table></div>
+  </section>
+
+  <section>
+    <div class="row"><h2>Okresy</h2><input type="search" id="q-okres" placeholder="Hľadať okres alebo kraj" aria-label="Hľadať okres alebo kraj"></div>
+    <div class="tbl scroll"><table id="t-okres"></table></div>
+  </section>
+
+  <section>
+    <h2>30 k.ú. s najviac záznamami</h2>
+    <div class="tbl scroll"><table id="t-top"></table></div>
+  </section>
+
+  <section>
+    <h2>Počet nezistených vlastníkov na jednom LV</h2>
+    <p class="muted">Koľko LV má 1, 2, 3–5 … mien nezistených vlastníkov. Podiel ani celkový počet spoluvlastníkov SPF zoznam neobsahuje.</p>
+    <div class="tbl"><table id="t-dist"></table></div>
+  </section>
+
+  <section>
+    <h2>Na dohodu pred krokom 2</h2>
+    <ul>
+      <li>Ktoré okresy alebo kraje sledovať.</li>
+      <li>Minimálna výmera (napr. 0,5 ha na LV) – závisí od výsledku ZBGIS overenia.</li>
+      <li>Druh pozemku (orná pôda 2, TTP 7, les 10 …) a register C / E.</li>
+      <li>Max. počet mien nezistených vlastníkov na LV (náhrada za „podiel“, ktorý SPF neuvádza).</li>
+    </ul>
+  </section>
+
+  <footer>Zdroje: pozfond.sk (zoznam nezistených vlastníkov k 30.06.2026), skgeodesy.sk / GKÚ (gn_csv.zip, GNKU.csv). Dáta a skripty: repozitár, priečinok <code>pozemky/</code>.</footer>
+</div>
+
+<script>
+const D = {"okres": [["Žilinský", "Čadca", 28, 464009, 61952], ["Žilinský", "Žilina", 70, 227536, 30818], ["Žilinský", "Ružomberok", 27, 167451, 25710], ["Nitriansky", "Nitra", 83, 146819, 34898], ["Trenčiansky", "Nové Mesto nad Váhom", 39, 144267, 28768], ["Trnavský", "Senica", 36, 129810, 31324], ["Prešovský", "Stará Ľubovňa", 46, 126905, 20608], ["Prešovský", "Sabinov", 45, 119244, 12680], ["Žilinský", "Liptovský Mikuláš", 77, 116982, 23173], ["Nitriansky", "Nové Zámky", 72, 116866, 37817], ["Nitriansky", "Komárno", 47, 116025, 25970], ["Košický", "Košice - okolie", 126, 113739, 23615], ["Prešovský", "Prešov", 104, 111915, 19792], ["Trenčiansky", "Považská Bystrica", 44, 109673, 17692], ["Banskobystrický", "Banská Bystrica", 52, 106925, 19952], ["Banskobystrický", "Brezno", 30, 103543, 21789], ["Košický", "Michalovce", 85, 96046, 28394], ["Prešovský", "Bardejov", 90, 93050, 14694], ["Banskobystrický", "Rimavská Sobota", 130, 92438, 23808], ["Trenčiansky", "Trenčín", 61, 90036, 19977], ["Žilinský", "Námestovo", 26, 89818, 17264], ["Trenčiansky", "Prievidza", 71, 78764, 21643], ["Košický", "Trebišov", 93, 75154, 26191], ["Košický", "Rožňava", 65, 74556, 17940], ["Nitriansky", "Levice", 125, 74284, 27760], ["Košický", "Sobrance", 48, 71603, 12451], ["Bratislavský", "Malacky", 32, 67348, 21558], ["Trenčiansky", "Bánovce nad Bebravou", 51, 66251, 11267], ["Žilinský", "Kysucké Nové Mesto", 17, 65199, 13367], ["Prešovský", "Snina", 41, 64540, 9607], ["Trenčiansky", "Myjava", 18, 64045, 22335], ["Nitriansky", "Šaľa", 15, 62649, 18387], ["Trenčiansky", "Ilava", 28, 59079, 13241], ["Banskobystrický", "Lučenec", 62, 56401, 12785], ["Trnavský", "Skalica", 28, 54049, 12548], ["Trenčiansky", "Púchov", 33, 53383, 12411], ["Prešovský", "Humenné", 62, 52917, 9020], ["Nitriansky", "Topoľčany", 62, 52862, 17340], ["Prešovský", "Vranov nad Topľou", 69, 51059, 12355], ["Nitriansky", "Zlaté Moravce", 44, 50909, 14377], ["Trnavský", "Galanta", 48, 50527, 16884], ["Prešovský", "Medzilaborce", 26, 47372, 6016], ["Banskobystrický", "Veľký Krtíš", 76, 46851, 17277], ["Prešovský", "Stropkov", 47, 42516, 5619], ["Žilinský", "Bytča", 18, 39439, 9564], ["Trnavský", "Piešťany", 34, 37553, 11824], ["Prešovský", "Svidník", 70, 37296, 6751], ["Trnavský", "Dunajská Streda", 116, 36512, 13316], ["Banskobystrický", "Žiar nad Hronom", 43, 36175, 9618], ["Banskobystrický", "Detva", 16, 35751, 8991], ["Trnavský", "Trnava", 58, 33194, 13068], ["Banskobystrický", "Revúca", 51, 31325, 9998], ["Žilinský", "Dolný Kubín", 37, 30369, 7923], ["Trnavský", "Hlohovec", 26, 29822, 9507], ["Košický", "Gelnica", 21, 29074, 6449], ["Košický", "Spišská Nová Ves", 37, 27313, 6033], ["Žilinský", "Martin", 50, 27310, 8323], ["Prešovský", "Poprad", 36, 24720, 7034], ["Trenčiansky", "Partizánske", 31, 24380, 6762], ["Banskobystrický", "Žarnovica", 23, 22419, 6550], ["Banskobystrický", "Poltár", 30, 20941, 4176], ["Banskobystrický", "Zvolen", 35, 20709, 7594], ["Prešovský", "Levoča", 35, 20439, 4671], ["Bratislavský", "Senec", 40, 19626, 6982], ["Prešovský", "Kežmarok", 45, 17360, 5823], ["Žilinský", "Tvrdošín", 21, 15145, 5559], ["Bratislavský", "Pezinok", 21, 13438, 5969], ["Žilinský", "Turčianske Teplice", 33, 9679, 2902], ["Banskobystrický", "Krupina", 47, 9490, 4076], ["Banskobystrický", "Banská Štiavnica", 18, 8789, 2558], ["Košický", "Košice I", 10, 6903, 1586], ["Bratislavský", "Bratislava IV", 6, 3843, 1603], ["Bratislavský", "Bratislava II", 5, 3540, 1664], ["Košický", "Košice IV", 8, 3515, 1321], ["Košický", "Košice II", 9, 3277, 1053], ["Bratislavský", "Bratislava III", 4, 3154, 1166], ["Košický", "Košice III", 2, 2172, 582], ["Bratislavský", "Bratislava V", 4, 540, 309], ["Bratislavský", "Bratislava I", 1, 535, 282]], "kraj": [["Žilinský", 11, 404, 1252937, 206555], ["Prešovský", 13, 716, 809333, 134670], ["Trenčiansky", 9, 376, 689878, 154096], ["Nitriansky", 7, 448, 620414, 176549], ["Banskobystrický", 13, 613, 591757, 149172], ["Košický", 11, 504, 503352, 125615], ["Trnavský", 7, 346, 371467, 108471], ["Bratislavský", 8, 113, 112024, 39533]], "top": [["Papradno", 845337, "Papradno", "Považská Bystrica", 69546, 7120], ["Kolárovo", 825581, "Kolárovo", "Komárno", 62299, 8730], ["Moravské Lieskové", 838454, "Moravské Lieskové", "Nové Mesto nad Váhom", 60077, 5510], ["Čadca", 808393, "Čadca", "Čadca", 43383, 3888], ["Stará Bystrica", 857921, "Stará Bystrica", "Čadca", 41787, 5990], ["Liptovská Lúžna", 832413, "Liptovská Lúžna", "Ružomberok", 37426, 2019], ["Skalité", 855774, "Skalité", "Čadca", 36380, 4192], ["Oščadnica", 844748, "Oščadnica", "Čadca", 33665, 4524], ["Klokočov", 824551, "Klokočov", "Čadca", 31594, 6906], ["Ružomberok", 853801, "Ružomberok", "Ružomberok", 30296, 7583], ["Krásno nad Kysucou", 828483, "Krásno nad Kysucou", "Čadca", 28032, 2669], ["Svrčinovec", 860018, "Svrčinovec", "Čadca", 27221, 2045], ["Nesluša", 839728, "Nesluša", "Kysucké Nové Mesto", 26338, 5222], ["Nová Bystrica", 841633, "Nová Bystrica", "Čadca", 25487, 2824], ["Dolná Poruba", 811726, "Dolná Poruba", "Trenčín", 24546, 1642], ["Fačkov", 814181, "Fačkov", "Žilina", 24379, 1918], ["Kúty", 830038, "Kúty", "Senica", 22553, 2715], ["Brodské", 806960, "Brodské", "Skalica", 20749, 2132], ["Čičmany", 809519, "Čičmany", "Žilina", 19735, 997], ["Omšenie", 843792, "Omšenie", "Trenčín", 19563, 1533], ["Horná Tižina", 817783, "Terchová", "Žilina", 18930, 1709], ["Vysoká nad Kysucou", 871061, "Vysoká nad Kysucou", "Čadca", 18887, 4933], ["Raková", 851388, "Raková", "Čadca", 18361, 2727], ["Staškov", 858633, "Staškov", "Čadca", 17660, 1625], ["Horelica", 808512, "Čadca", "Čadca", 17154, 1239], ["Zázrivá", 872806, "Zázrivá", "Dolný Kubín", 16961, 3592], ["Vrbovce", 870587, "Vrbovce", "Myjava", 16137, 5093], ["Závadka nad Hronom", 872563, "Závadka nad Hronom", "Brezno", 16096, 1685], ["Nižný Slavkov", 841188, "Nižný Slavkov", "Sabinov", 16085, 532], ["Polomka", 848051, "Polomka", "Brezno", 15448, 3635]], "dist": [["1", 491523], ["2", 201362], ["3–5", 217573], ["6–10", 108755], ["11–20", 46282], ["21–50", 20014], ["51+", 9152]]};
+const f = n => n.toLocaleString('sk-SK');
+function table(el, head, rows, barIdx){
+  const max = barIdx==null?0:Math.max(...rows.map(r=>r[barIdx]));
+  el.innerHTML = '<thead><tr>'+head.map(h=>`<th class="${h[1]?'num':''}">${h[0]}</th>`).join('')+(barIdx!=null?'<th class="barcell"></th>':'')+'</tr></thead><tbody>'+
+    rows.map(r=>'<tr>'+r.map((v,i)=>`<td class="${head[i][1]?'num':''}">${head[i][1]?f(v):v}</td>`).join('')+
+    (barIdx!=null?`<td class="barcell"><div class="bar" style="width:${(r[barIdx]/max*100).toFixed(1)}%"></div></td>`:'')+'</tr>').join('')+'</tbody>';
+}
+table(document.getElementById('t-kraj'), [['Kraj'],['Okresy',1],['k.ú.',1],['Záznamy',1],['LV',1]], D.kraj, 3);
+const okH=[['Kraj'],['Okres'],['k.ú.',1],['Záznamy',1],['LV',1]];
+const tOk=document.getElementById('t-okres');
+table(tOk, okH, D.okres, 3);
+document.getElementById('q-okres').addEventListener('input', e=>{
+  const q=e.target.value.trim().toLowerCase();
+  table(tOk, okH, D.okres.filter(r=>!q||(r[0]+' '+r[1]).toLowerCase().includes(q)), 3);
+});
+table(document.getElementById('t-top'), [['k.ú.'],['Kód',0],['Obec'],['Okres'],['Záznamy',1],['LV',1]], D.top, 4);
+table(document.getElementById('t-dist'), [['Mien na LV'],['Počet LV',1]], D.dist, 1);
+</script>

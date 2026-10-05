@@ -30,6 +30,8 @@ python scripts/03_zbgis_overenie.py --ku 845337 --len-schema  # len vypíše atr
 | `spf_okres_suhrn.csv` | súhrn podľa okresov | áno |
 | `zbgis/` | výstupy skriptu 03 (schémy, parcely, spoj) | nie |
 
+Prehľadová stránka kroku 1: `pozemky/web/krok1_prehlad.html` (publikovaná ako artifact https://claude.ai/artifact/5K1SoTyaUq6e9Atp8wiKya).
+
 ## Zdroje
 
 - SPF – Zoznam nezistených vlastníkov k 30.06.2026:
