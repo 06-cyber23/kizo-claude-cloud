@@ -19,6 +19,8 @@ python scripts/03_zbgis_overenie.py --ku 845337            # ZBGIS overenie 1 k.
 python scripts/03_zbgis_overenie.py --ku 845337 --len-schema  # len vypíše atribúty vrstiev
 python scripts/04_kandidati.py --medzi Nitra Topoľčany --okresy Nitra Topoľčany --sirka 6000 --tag nr_to
                                                # kandidátne LV zo SPF pre koridor/okresy -> data/kandidati_<tag>.csv + web/kandidati_<tag>.json
+python scripts/05_mena_struktura.py --vstup data/kandidati_nr_to.csv --tag nr_to --lv 840611:858
+                                               # rozklad mien (priezvisko, rodné, manžel, nar., zom., č.d.) + rodinné klastre na LV
 ```
 
 ## Dáta (pozemky/data)
@@ -33,6 +35,8 @@ python scripts/04_kandidati.py --medzi Nitra Topoľčany --okresy Nitra Topoľč
 | `zbgis/` | výstupy skriptu 03 (schémy, parcely, spoj) | nie |
 | `kandidati_nr_to.csv` | LV v koridore Nitra–Topoľčany (56 k.ú.): `ku_kod, lv, pocet_nezist, s_udajom, s_umrtim, spf_pozn, mena, ku_nazov, obec, okres, os_dist` | áno |
 | `kandidati_nr_to_ku.csv` | súhrn po k.ú. (LV, mien, LV s ≥2 / 3–8 / ≥9 menami) | áno |
+| `mena_nr_to.csv` | 1 riadok = 1 osoba zo SPF zoznamu v koridore, štruktúrované polia (heuristika) | áno |
+| `klastre_nr_to.csv` | rodinné klastre na LV (spojené cez kmeň priezviska / rodného priezviska, aj cez sobáš) | áno |
 
 Stránky (pozemky/web, publikované ako artifacty):
 - `krok1_prehlad.html` – súhrn SPF zoznamu: https://claude.ai/artifact/5K1SoTyaUq6e9Atp8wiKya

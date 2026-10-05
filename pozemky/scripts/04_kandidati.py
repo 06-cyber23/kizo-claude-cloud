@@ -30,6 +30,7 @@ RE_SPF = re.compile(r"\bSPF\b")
 def ocisti_meno(s: str) -> str:
     """SPF export opakuje poznámku: 'Meno (pozn.) D:(pozn.)' alebo 'Meno, (pozn.) pozn.' -> 'Meno (pozn.)'."""
     s = re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\s+D:\(.*$", "", s)  # chvost 'D:(pozn.)|(pozn.)' je vždy len opakovanie poznámok
     i = s.find("(")
     if i < 0:
         return s
@@ -77,6 +78,8 @@ def main():
     ap.add_argument("--ku", nargs="*", type=int)
     ap.add_argument("--min-mien", type=int, default=2, help="min. počet nezistených mien na LV pre JSON")
     ap.add_argument("--tag", required=True)
+    ap.add_argument("--tipy", type=int, default=10,
+                    help="počet tipov na test: 1 LV na k.ú. (3–6 mien, >=50 %% mien so stopou, k.ú. do 3,5 km od osi), rozložené pozdĺž osi")
     a = ap.parse_args()
 
     ku = pd.read_csv(ROOT / "data" / "ciselnik_ku.csv")
@@ -118,7 +121,17 @@ def main():
     rows = [[int(r.ku_kod), r.ku_nazov, r.okres, int(r.lv), int(r.pocet_nezist), int(r.s_udajom),
              int(r.s_umrtim), r.mena.split(" | ")] for r in web.itertuples()]
     out = {"tag": a.tag, "ku": kus.to_dict(orient="records"), "lv": rows,
-           "pocet_lv_spolu": int(len(lv)), "pocet_mien_spolu": int(lv.pocet_nezist.sum())}
+           "pocet_lv_spolu": int(len(lv)), "pocet_mien_spolu": int(lv.pocet_nezist.sum()), "tipy": []}
+    if a.tipy:
+        c = lv[lv.pocet_nezist.between(3, 6) & (lv.s_udajom / lv.pocet_nezist >= 0.5)]
+        if "os_dist" in c:
+            c = c[c.os_dist <= 3500]
+        c = (c.sort_values(["ku_kod", "pocet_nezist", "s_udajom"], ascending=[True, False, False])
+               .drop_duplicates("ku_kod").merge(ku[["ku_kod", "y_jtsk"]], on="ku_kod")
+               .sort_values("y_jtsk").reset_index(drop=True))
+        idx = np.unique(np.linspace(0, len(c) - 1, min(a.tipy, len(c))).round().astype(int)) if len(c) else []
+        out["tipy"] = [[int(r.ku_kod), r.ku_nazov, r.okres, int(r.lv), int(r.pocet_nezist), r.mena.split(" | ")]
+                       for r in c.loc[idx].itertuples()]
     (ROOT / "web").mkdir(exist_ok=True)
     (ROOT / "web" / f"kandidati_{a.tag}.json").write_text(json.dumps(out, ensure_ascii=False))
     print(f"JSON: {len(rows)} LV")
