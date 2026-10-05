@@ -145,3 +145,44 @@ Poznámky k menám v SPF exporte: poznámka sa opakuje (`Meno (pozn.) D:(pozn.)`
 - GitHub Actions ako „iná IP“ na overenie ESKN REST: zablokované bezpečnostným klasifikátorom (obchádzanie sieťového
   obmedzenia) – nepoužívať. Pracovný postup: človek ručne prečíta čísla parciel z LV (1 LV = 1 nahliadnutie na portál)
   a vloží ich do parcely_mapa.html.
+
+## Hľadanie dedičov – overený právny rámec (workflow 2, 25 agentov, stav 10/2026; paragrafy overené zo slov-lex)
+
+- Pôda nezistených vlastníkov: zákon 180/1995 Z. z. § 13, § 16 (SPF koná „na základe údajov katastra“); vlastníkom
+  ostáva nezistená osoba / jej dedičia (§ 460 OZ). § 15 (prepadnutie štátu) zrušil ÚS SR nálezom 537/2006 – **žiadna
+  lehota prepadnutia dnes neplatí**; návrhy MPRV (PI/2022/109, PI/2024/321) na zákon o prechode na štát k 10/2026
+  nenájdené ako schválené (neoverené). Oprávnenia SPF zanikajú doručením výpisu z LV po zápise dediča (§ 20 ods. 1);
+  dedič preberá existujúci nájom SPF (§ 20 ods. 2); **spätné nájomné sa nevypláca** (§ 18; NS SR 2Cdo/94/2020).
+  Ak SPF pozemok previedol (§ 19 ods. 3), dedičovi ostáva len neprevoditeľný nárok na náhradu (§ 19 ods. 8).
+- Dedičské konanie (CMP 161/2015): príslušnosť § 158/§ 159; notár ako súdny komisár § 161; dodatočné konanie
+  o novoobjavenom majetku **na návrh dediča** (§ 211 ods. 1), tretia osoba môže dať len podnet (§ 211 ods. 2);
+  ak konanie po predkovi nikdy neprebehlo, súd začne aj bez návrhu, len čo sa dozvie o úmrtí (§ 174 ods. 2),
+  reťazí sa po každom medzičlánku (§ 172). Neznámy dedič: vyhláška súdu § 190 ods. 2 (úradná tabuľa, web súdu,
+  web Notárskej komory) – kde reálne visia a či sú prehľadávateľné, NEOVERENÉ. Poplatky: súdny 1 % z čistej hodnoty,
+  min. 10 €, max. 250 € (zák. 71/1992 pol. 18a písm. b); notár vyhl. 31/1993 § 13 (2 % z prvých 3 300 € …, min. 23 €)
+  + DPH. Smrť poručiteľa do 31.12.1950 → uhorské obyčajové právo (§ 859 OZ), riešia notári.
+- Matriky: zákon 154/1994 § 18 – výpis/nazretie len osoba, člen rodiny (manžel, rodičia, deti, vnuci, súrodenci a ich
+  deti) alebo splnomocnenec; iná osoba len s preukázaným oprávneným záujmom → **tretia osoba (firma) výpis nedostane**.
+  Matriky po 100 rokoch od posledného zápisu idú do štátneho archívu (§ 5 ods. 3) → cca 1926–dnes sú na matričných úradoch.
+- Archívy: zákon 395/2002 § 12 (právo prístupu), § 13 ods. 5 – osobné údaje voľne až po 90 rokoch od vzniku záznamu,
+  inak súhlas blízkej osoby s osvedčeným podpisom alebo vedecký výskum + čestné vyhlásenie. ŠA Nitra (Ivanka pri Nitre),
+  pracovisko Topoľčany; rešerš 15–25 €/h (nariadenie MV SR 154/2023).
+- Pozemková kniha: súčasť katastrálneho operátu (§ 8 ods. 1 písm. e) zák. 162/1995), každý má právo nahliadať
+  a žiadať kópie (§ 68 ods. 1, § 69); poplatok kópia vložky 12 €/20 parciel, nahliadnutie 5 € (zák. 145/1995 pol. 10),
+  bez poplatku na účely dedičského konania. Zbierka listín len vlastník/právni nástupcovia (§ 68 ods. 3).
+- FamilySearch „Slovakia Church and Synagogue Books 1592–1935“: ~22 mil. indexovaných záznamov, bezplatný účet povinný;
+  podmienky (2023-09-01) zakazujú scraping, bulk download aj komerčné použitie vrátane získavania klientov →
+  len ručný výskum pre konkrétneho dediča. Cintoríny (virtualnycintorin.sk robots.txt zakazuje roboty, cintoriny.sk,
+  pohrebiska.sk), parte (spominam.sk, funus.sk) – len ručne. Obchodný vestník: PDF ručne, XML export po registrácii
+  u MS SR (§ 7 ods. 4 zák. 200/2011); CUET len ľudský prehliadač.
+- Drobenie: § 23 ods. 1 zák. 180/1995 – nový poľnohospodársky pozemok min. **3 000 m²**, lesný 5 000 m² (aj dedením);
+  § 22 odvod 30–60 % pri vzniku pozemku 3 001–20 000 m²; § 24 – podiely. Predkupné právo spoluvlastníkov § 140 OZ.
+- Existujúce SK služby: dedici.sk (Data Scalp s.r.o., report 9 €/priezvisko), nezisteny-vlastnik.sk (LotIQ),
+  GENEA s.r.o. Nitra (neznamy-vlastnik.sk), CentroConsult Šamorín (aplikovaná genealógia). VOP zakazujú automatizáciu.
+- Riziká: GDPR pri databáze/oslovovaní žijúcich dedičov (oprávnený záujem + informačná povinnosť); sústavné
+  zastupovanie dedičov za odmenu = výkon advokácie (zák. 586/2003); § 485 OZ pri nepravom dedičovi; odúmrť § 462 OZ.
+- Verdikt kritika: systematicky (skriptom) sa dá robiť len prvá polovica (SPF → mená → klastre → parcely → výber LV);
+  druhá polovica (meno zomretého → žijúci dedič) je ručná a od ~1926 len z vnútra rodiny. Funguje ako služba pre
+  dedičov („nájdi svoje priezvisko → návod → konanie“), nie ako systematický nákup podielov.
+Štatistika mien v koridore: rodné priezvisko 52,9 %, manžel 22,1 %, rok úmrtia 8,0 %, rok narodenia 0,6 %,
+č.d. 5,7 %; 35 % osôb nemá žiadny rozlišovací údaj okrem mena a k.ú.
