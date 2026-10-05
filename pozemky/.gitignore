@@ -2,3 +2,4 @@ data/raw/
 data/zbgis/
 __pycache__/
 *.csv.gz
+web/parcely/*.geojson

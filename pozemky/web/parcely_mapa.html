@@ -1,0 +1,163 @@
+<title>Parcely Nitra–Topoľčany</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+/* Layout: ovládanie hore, mapa parciel (bez podkladu – CSP artifactu nepustí dlaždice), pod ňou tabuľka zadaných parciel */
+:root{
+  --bg:#f5f7f4; --surface:#ffffff; --fg:#1c2620; --muted:#5d6b62; --line:#d9e0da;
+  --accent:#2f6b4f; --accent-soft:#e3efe8; --hl:#c2410c; --hl-soft:#fde7d9;
+  --parcel:#9fb8a8; --parcel-in:#d9b76a; --warn:#8a5a00; --warn-bg:#fbefd5;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121815; --surface:#19211d; --fg:#e4ebe6; --muted:#9aa9a0; --line:#2c3731;
+  --accent:#7cc39c; --accent-soft:#1f3329; --hl:#fb923c; --hl-soft:#3d2414;
+  --parcel:#3f5a4a; --parcel-in:#8a6f2e; --warn:#f0c46b; --warn-bg:#3a2e14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121815; --surface:#19211d; --fg:#e4ebe6; --muted:#9aa9a0; --line:#2c3731;
+  --accent:#7cc39c; --accent-soft:#1f3329; --hl:#fb923c; --hl-soft:#3d2414;
+  --parcel:#3f5a4a; --parcel-in:#8a6f2e; --warn:#f0c46b; --warn-bg:#3a2e14; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);margin:0}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:22px 56px;display:flex;flex-direction:column;gap:20px}
+h1,h2{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(1.5rem,5vw,2.2rem);font-weight:800;line-height:1.1}
+h2{font-size:1.1rem;font-weight:700}
+.eyebrow{font:500 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+p{margin:0;max-width:68ch}.muted{color:var(--muted)}
+.head{display:flex;flex-direction:column;gap:8px}
+.ctrl{display:grid;grid-template-columns:1.4fr .7fr 2fr auto;gap:8px;align-items:end}
+@media (max-width:680px){.ctrl{grid-template-columns:1fr 1fr}.ctrl .wide{grid-column:1/-1}}
+label.f{display:flex;flex-direction:column;gap:3px;font:500 .7rem var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-width:0}
+select,input,textarea{font:inherit;font-family:var(--f-body);font-size:.95rem;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);width:100%;min-width:0}
+textarea{font-family:var(--f-mono);font-size:.9rem;min-height:42px;resize:vertical}
+button{font:inherit;font-weight:600;padding:10px 16px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;cursor:pointer}
+button.sec{background:var(--surface);color:var(--accent)}
+select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kpi{background:var(--surface);padding:10px 12px 8px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.kpi b{font:600 clamp(1rem,3.2vw,1.35rem) var(--f-mono);font-variant-numeric:tabular-nums;color:var(--accent)}
+.kpi span{font-size:.76rem;color:var(--muted)}
+@media (max-width:620px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#map{height:min(62vh,560px);border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.leaflet-container{font:inherit;background:var(--surface)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--fg);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.leaflet-control-zoom a{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.leaflet-control-attribution{background:var(--surface);color:var(--muted);font-size:.7rem}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+.note{border-left:3px solid var(--warn);background:var(--warn-bg);padding:10px 12px;border-radius:0 6px 6px 0;font-size:.9rem}
+.note b{color:var(--warn)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:500 .68rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}tbody tr:hover td{background:var(--accent-soft)}
+td.miss{color:var(--hl)}
+a{color:var(--accent)}
+.count{font:500 .8rem var(--f-mono);color:var(--muted)}
+code{font:.85em var(--f-mono);background:var(--accent-soft);padding:1px 5px;border-radius:3px}
+footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="eyebrow">Projekt POZEMKY · parcely C a E · otvorené dáta ÚGKK (stav 30.09.2026)</div>
+    <h1>Parcely medzi Nitrou a Topoľčanmi</h1>
+    <p class="muted">Vyber katastrálne územie, register a vlož čísla parciel z listu vlastníctva. Stránka ukáže výmeru, či parcela leží v zastavanom území obce, a vykreslí ju na mape.</p>
+  </header>
+
+  <div class="ctrl">
+    <label class="f">k.ú.<select id="ku"></select></label>
+    <label class="f">register<select id="reg"><option value="E">E</option><option value="C">C</option></select></label>
+    <label class="f wide">čísla parciel z LV (oddelené čiarkou alebo medzerou)<textarea id="parc" placeholder="napr. 1234/2, 1235, 1240/1"></textarea></label>
+    <button id="go">Zobraziť</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+  <div class="legend"><span><i style="background:var(--parcel)"></i>parcela mimo zastavaného územia</span><span><i style="background:var(--parcel-in)"></i>v zastavanom území obce (ZUOB)</span><span><i style="background:var(--hl)"></i>zadané parcely</span></div>
+  <div id="map" role="img" aria-label="Mapa parciel katastrálneho územia"></div>
+  <p class="muted" style="font-size:.82rem">Mapa je bez podkladovej mapy (stránka nesmie načítať dlaždice z iných serverov). Pri každej zadanej parcele je odkaz, ktorý otvorí to isté miesto v oficiálnej aplikácii ZBGIS.</p>
+
+  <section>
+    <div class="count" id="count"></div>
+    <div class="tbl"><table id="t"></table></div>
+  </section>
+
+  <div class="note"><b>Čo chýba:</b> číslo LV a druh pozemku. Otvorené dáta ÚGKK ich neobsahujú; verejná služba ich pre anonymný prístup nevracia. Čísla parciel k danému LV si človek pozrie na katastrálnom portáli (jedno LV ručne) a vloží ich sem.</div>
+
+  <footer>Zdroje: ÚGKK SR / GKÚ Bratislava – INSPIRE Cadastral Parcels (opendata.skgeodesy.sk, CC BY 4.0), hranice zastavaného územia obce ZUOB (skgeodesy.sk, CC BY 4.0). Výmera = úradná výmera z katastra (cp:areaValue). Skript: <code>pozemky/scripts/06_inspire_parcely.py</code>.</footer>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+const f = n => n.toLocaleString('sk-SK');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KU = [[802468, "Belince", "Topoľčany", 585, 610], [808598, "Čakajovce", "Nitra", 1879, 1755], [809101, "Čeľadince", "Topoľčany", 941, 1217], [812021, "Dolné Krškany", "Nitra", 4945, 1551], [812048, "Dolné Lefantovce", "Nitra", 1308, 1463], [812161, "Dolné Štitáre", "Nitra", 4007, 818], [812854, "Dražovce", "Nitra", 5628, 2197], [813958, "Dvorany nad Nitrou", "Topoľčany", 1061, 1020], [817970, "Horné Chlebany", "Topoľčany", 660, 366], [817996, "Horné Lefantovce", "Nitra", 2147, 990], [819981, "Hrušovany", "Topoľčany", 1843, 1902], [820903, "Chrabrany", "Topoľčany", 1985, 2929], [821454, "Ivanka pri Nitre", "Nitra", 5655, 2917], [821781, "Jacovce", "Topoľčany", 2844, 1702], [822728, "Jelšovce", "Nitra", 1920, 4010], [823236, "Kamanová", "Topoľčany", 968, 903], [826111, "Koniarovce", "Topoľčany", 1577, 155], [827843, "Kovarce", "Topoľčany", 2322, 2953], [829609, "Dolné Chlebany", "Topoľčany", 586, 764], [829617, "Krušovce", "Topoľčany", 3073, 2514], [830054, "Kuzmice", "Topoľčany", 1383, 1579], [830623, "Malý Lapáš", "Nitra", 2601, 441], [830631, "Veľký Lapáš", "Nitra", 4105, 1522], [834076, "Ludanice", "Topoľčany", 3068, 223], [835471, "Malé Bedzany", "Topoľčany", 556, 758], [839124, "Mýtna Nová Ves", "Topoľčany", 744, 1676], [839558, "Nemčice", "Topoľčany", 2842, 224], [839914, "Nitra", "Nitra", 17225, 833], [840076, "Horné Krškany", "Nitra", 3011, 477], [840165, "Párovské Háje", "Nitra", 5287, 448], [840203, "Kynek", "Nitra", 3166, 211], [840254, "Mlynárce", "Nitra", 4125, 484], [840319, "Zobor", "Nitra", 12408, 1162], [840378, "Chrenová", "Nitra", 6672, 1804], [840564, "Mikov dvor", "Nitra", 1041, 133], [840581, "Čechynce", "Nitra", 2964, 1578], [840611, "Nitrianska Streda", "Topoľčany", 1526, 1084], [840653, "Nitrianske Hrnčiarovce", "Nitra", 6545, 1404], [844012, "Oponice", "Topoľčany", 2271, 140], [847267, "Bádice", "Nitra", 1094, 1443], [847275, "Mechenice", "Nitra", 1667, 1489], [847283, "Sokolníky", "Nitra", 1373, 665], [847810, "Pohranice", "Nitra", 4858, 3436], [849464, "Preseľany", "Topoľčany", 3868, 282], [851213, "Rajčany", "Topoľčany", 1004, 1058], [857289, "Solčany", "Topoľčany", 6155, 134], [859591, "Súlovce", "Topoľčany", 1566, 1049], [863548, "Topoľčany", "Topoľčany", 12577, 1894], [864056, "Tovarníky", "Topoľčany", 3180, 571], [866539, "Urmince", "Topoľčany", 2363, 2695], [867926, "Veľké Bedzany", "Topoľčany", 1370, 1405], [868035, "Veľké Janíkovce", "Nitra", 4522, 3324], [869210, "Velušovce", "Topoľčany", 1013, 1812], [870773, "Ľudovítová", "Nitra", 429, 414], [870781, "Výčapy-Opatovce", "Nitra", 2818, 2474], [874931, "Žirany", "Nitra", 3926, 3176]];  // [[ku_kod, názov, okres, parcielC, parcielE], ...]
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let map, layer, hlLayer, data = null, cache = {};
+
+function initMap(){
+  map = L.map('map', {zoomControl:true, attributionControl:true}).setView([48.45, 18.1], 12);
+  map.attributionControl.setPrefix('').addAttribution('ÚGKK SR, GKÚ – CC BY 4.0');
+}
+function norm(s){ return s.replace(/\s+/g,'').replace(/^0+(?=\d)/,''); }
+async function load(ku, reg){
+  const key = `${ku}_${reg}`;
+  if (cache[key]) return cache[key];
+  const r = await fetch(`parcely/${key}.geojson`);
+  if (!r.ok) throw new Error('no file');
+  cache[key] = await r.json();
+  return cache[key];
+}
+function zbgis(lat, lon){ return `https://zbgis.skgeodesy.sk/mkzbgis/sk/kataster?pos=${lat.toFixed(6)},${lon.toFixed(6)},18`; }
+function centroid(geom){
+  const pts = []; const walk = c => (typeof c[0]==='number') ? pts.push(c) : c.forEach(walk); walk(geom.coordinates);
+  const s = pts.reduce((a,p)=>[a[0]+p[0],a[1]+p[1]],[0,0]); return [s[1]/pts.length, s[0]/pts.length];
+}
+async function show(){
+  const ku = +el('ku').value, reg = el('reg').value;
+  const want = el('parc').value.split(/[,;\s]+/).map(norm).filter(Boolean);
+  el('count').textContent = 'Načítavam…';
+  try { data = await load(ku, reg); } catch(e){ el('count').textContent = `Pre k.ú. ${ku} register ${reg} nie sú dáta.`; return; }
+  const wantSet = new Set(want);
+  if (layer) map.removeLayer(layer); if (hlLayer) map.removeLayer(hlLayer);
+  layer = L.geoJSON(data, {style: ft => ({color: css('--line'), weight: .6, fillColor: ft.properties.i ? css('--parcel-in') : css('--parcel'), fillOpacity: .55}),
+    onEachFeature: (ft, l) => l.bindPopup(`<b>${esc(ft.properties.p)}</b> (${reg})<br>${f(ft.properties.v)} m²${ft.properties.i?'<br>zastavané územie':''}`)}).addTo(map);
+  const hits = data.features.filter(ft => wantSet.has(norm(ft.properties.p)));
+  hlLayer = L.geoJSON({type:'FeatureCollection', features: hits}, {style: {color: css('--hl'), weight: 2.5, fillColor: css('--hl'), fillOpacity: .45}}).addTo(map);
+  const b = hits.length ? hlLayer.getBounds() : layer.getBounds();
+  if (b.isValid()) map.fitBounds(b.pad(hits.length ? .6 : .02));
+  const found = new Set(hits.map(ft => norm(ft.properties.p)));
+  const missing = want.filter(w => !found.has(w));
+  const tot = data.features.reduce((a,ft)=>a+(ft.properties.v||0),0), totIn = data.features.filter(ft=>ft.properties.i).length;
+  const hv = hits.reduce((a,ft)=>a+(ft.properties.v||0),0), hIn = hits.filter(ft=>ft.properties.i).length;
+  el('kpis').innerHTML = [[f(data.features.length), `parciel ${reg} v k.ú.`],[f(Math.round(tot/1e4)), 'ha spolu v k.ú.'],[f(totIn), 'parciel v zastavanom území'],
+    [hits.length ? `${hits.length} · ${f(hv)} m²` : '–', hits.length ? `zadané parcely · ${hIn} v zastavanom území` : 'zadaj čísla parciel']]
+    .map(([b,s])=>`<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('');
+  const rows = hits.map(ft => { const [lat,lon] = centroid(ft.geometry); return `<tr data-p="${esc(ft.properties.p)}"><td>${esc(ft.properties.p)}</td><td>${reg}</td><td class="num">${f(ft.properties.v)}</td><td>${ft.properties.i?'áno':'nie'}</td><td><a href="${zbgis(lat,lon)}" target="_blank" rel="noopener">otvoriť v ZBGIS</a></td></tr>`; })
+    .concat(missing.map(m => `<tr><td class="miss">${esc(m)}</td><td>${reg}</td><td class="num miss">–</td><td class="miss">nenájdená v k.ú.</td><td></td></tr>`));
+  el('t').innerHTML = rows.length ? '<thead><tr><th>Parcela</th><th>Reg.</th><th class="num">Výmera m²</th><th>Zastavané územie</th><th></th></tr></thead><tbody>'+rows.join('')+'</tbody>' : '';
+  el('count').textContent = want.length ? `${hits.length} z ${want.length} zadaných parciel nájdených${missing.length?`, nenájdené: ${missing.join(', ')} (skús druhý register)`:''}` : `Zobrazené všetky parcely registra ${reg}. Zadaj čísla parciel z LV.`;
+  el('t').querySelectorAll('tbody tr[data-p]').forEach(tr => tr.addEventListener('click', () => {
+    const ft = hits.find(x => x.properties.p === tr.dataset.p); if (!ft) return;
+    const [lat,lon] = centroid(ft.geometry); map.setView([lat,lon], Math.max(map.getZoom(), 17));
+  }));
+}
+function boot(){
+  const sel = el('ku');
+  KU.sort((a,b)=>a[1].localeCompare(b[1],'sk')).forEach(k => { const o = document.createElement('option'); o.value = k[0]; o.textContent = `${k[1]} (${k[2]}) – C ${f(k[3])}, E ${f(k[4])}`; sel.appendChild(o); });
+  const h = location.hash.replace('#','');
+  if (h && KU.some(k => String(k[0]) === h)) sel.value = h; else sel.value = '840611';
+  initMap();
+  el('go').addEventListener('click', show);
+  el('parc').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); show(); } });
+  show();
+}
+boot();
+</script>
