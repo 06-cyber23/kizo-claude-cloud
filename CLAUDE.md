@@ -24,6 +24,7 @@ python scripts/05_mena_struktura.py --vstup data/kandidati_nr_to.csv --tag nr_to
 python scripts/06_inspire_parcely.py --tag nr_to --ku-csv data/kandidati_nr_to_ku.csv \
     --zip data/raw/inspire/NitrianskyC.zip data/raw/inspire/NitrianskyE.zip
                                                # parcely C+E s výmerou, geometriou a príznakom intravilán (ZUOB) -> data/parcely_<tag>.parquet
+python scripts/07_spf_z126.py --tag nr_to      # SPF zostavy Z126/Z166 (PDF v data/raw/spf_z126, spf_z166) -> LV + parcely + druh + intravilán + mená
 ```
 Zipy parciel: `curl -o data/raw/inspire/NitrianskyC.zip https://opendata.skgeodesy.sk/static/INSPIRE/Cadastral_parcels/NitrianskyC.zip`
 (C 294 MB, E 220 MB; celé SR SlovenskoC.zip 2,28 GB / SlovenskoE.zip 1,71 GB). ZUOB: `data/raw/zuob_gpkg.zip` z
@@ -46,6 +47,10 @@ sa generuje z parquetu ad hoc (kód v histórii session; nie je v gite – pozri
 | `klastre_nr_to.csv` | rodinné klastre na LV (spojené cez kmeň priezviska / rodného priezviska, aj cez sobáš) | áno |
 | `parcely_nr_to.parquet` | 258 571 parciel (C 181 266, E 77 305) v 56 k.ú.: `ku_kod, register, parcela, vymera_m2 (úradná), vymera_geom_m2, lon, lat, intravilan_podiel, intravilan, wkb (EPSG:4258)` | áno (35 MB) |
 | `parcely_nr_to_ku.csv` | súhrn parciel po k.ú. a registri (počet, ha, v zastavanom území) | áno |
+| `z126_nr_to.csv` | 9 196 riadkov zostáv SPF Z126/Z166 (55 k.ú.): parcela C, výmera, druh, LV, intravilán, NV-SPF, + INSPIRE poloha + mená | áno |
+| `z126_nr_to_lv.csv` | 1 245 LV s neprenajatými parcelami (1 101 v SPF zozname, 375 intravilán, 889 ha) | áno |
+| `gku_cena_spi_nr_to.csv` | cena údajov SPI KN od GKÚ za každé k.ú. koridoru (80–250 €) | áno |
+| `ugkk_nezisteni_ku_2026.csv` | súhrn ÚGKK po k.ú. – NEPOUŽÍVAŤ ako pôdu nezistených (pozri Zdroje) | áno |
 
 Stránky (pozemky/web, publikované ako artifacty):
 - `krok1_prehlad.html` – súhrn SPF zoznamu: https://claude.ai/artifact/5K1SoTyaUq6e9Atp8wiKya
@@ -59,6 +64,10 @@ Stránky (pozemky/web, publikované ako artifacty):
   v zastavanom území (E aj C) po k.ú., odkaz do ZBGIS; človek zadá číslo LV z mapy → stránka ho porovná so SPF
   zoznamom (všetkých 18 175 LV koridoru s menami). Zadané LV sa pamätajú v localStorage.
   https://claude.ai/artifact/XG4jDCkb2J65m4yU4bZSWB
+- `z126_nr_to.html` + `z126_nr_to.json` (1,4 MB) – LV s neprenajatými pozemkami SPF: parcely C, výmera, druh, v obci /
+  mimo, podiel nezistených (NV-SPF/výmera), mená zo SPF zoznamu; filtre k.ú., poloha, min. m², druh/meno:
+  https://claude.ai/artifact/DtTK8YXPitQmmKZfAdiagM
+  Overenie: výmera v zostave = INSPIRE pri 99,1 % parciel, umiestnenie SPF = ZUOB pri 99,9 % (ZUOB je spoľahlivý intravilán).
   Test LV 858 Nitrianska Streda (ručne na portáli): E 180/1 (1 144 m²) + 371 (2 780 m²), orná pôda, mimo ZÚ,
   6 podielov (4/12, 4/12, 4×1/12), správa SPF → sedí s otvorenými dátami na m², ale nerentabilné.
 
@@ -89,6 +98,25 @@ Poznámky k menám v SPF exporte: poznámka sa opakuje (`Meno (pozn.) D:(pozn.)`
   nationalCadastralReference `{ku}_{parcela}.{C|E}`. Metadáta: rpi.gov.sk (API /api/collection_record/{id}),
   C = 1d9ceaef-b3c6-4441-96df-a3ec353c7451, E = 36b39dd7-001a-4734-a98e-ee01aa9f7a96. V registri E sa to isté číslo
   parcely môže v k.ú. vyskytnúť 2× (530 prípadov v koridore) – rozlíšiť polohou.
+- **SPF zostavy po k.ú. (pozfond.sk, archív):** Z126 „Neprenajaté pozemky v správe a nakladaní SPF“ (3 559 PDF, stav
+  26.02.2026, https://pozfond.sk/zoznam-pozemkov-na-prenajom-archiv-2-4-2026/ → `wp-content/uploads/uzemneplany/{Okres}_{Obec}_{KU}.pdf`)
+  a Z166 „pozemky s končiacimi nájomnými zmluvami 2026“ (288 PDF, stav 27.03.2026, `…/neprenajate-pozemky/…`).
+  Stĺpce: parcela C, výmera, kód druhu pozemku, LV, umiestnenie (1 intravilán / 2 extravilán), SR-SPF, NV-SPF (výmera
+  podielov nezistených vlastníkov), spolu. Jediný verejný zdroj väzby LV → parcela + druh pozemku pre pôdu nezistených
+  vlastníkov; pokrýva len NEPRENAJATÉ pozemky (~1–2 % LV zo zoznamu). Riadky s LV=0 = C-parcela bez LV (vlastníctvo na
+  E-parcelách). SPF: „Aktuálne nezverejňuje nové zoznamy neprenajatých pozemkov“ – zdroj sa už neaktualizuje.
+  Parsovanie: `pdftotext -layout` + regex (skript 07). Mapovanie URL ↔ k.ú.: slug(okres)_slug(obec)_slug(k.ú.), data/raw/z126_urls.csv.
+- GKÚ cenník (https://www.gku.sk/files/gku/produkty-sluzby/cennik-gku/cennik_gku.pdf, cena_kn.pdf po k.ú.): údaje zo
+  SPI KN (LV, parcely, vlastníci, podiely) za celé k.ú. vo FPU/DBF, kategórie I 9 € … V 250 €, aj pre FO/PO,
+  štvrťročná aktualizácia (50 % zľava pri opakovanom odbere). Ceny pre 56 k.ú. koridoru: data/gku_cena_spi_nr_to.csv
+  (80–250 €/k.ú., spolu s VKM/VMUO/BPEJ 179–425 €). Lustrácia podľa osoby 3 €/k.ú. – len pre orgány verejnej moci.
+- ÚGKK CSV „Prehľad o plochách druhov pozemkov podľa PO a FO k 1.1.2026“ po k.ú. (data/raw/ugkk/sumar_ku_2026.csv,
+  UTF-8 BOM, `;`, 12 skupín × 13 stĺpcov; spracované v data/ugkk_nezisteni_ku_2026.csv). POZOR: stĺpec „nezistený
+  účastník právneho vzťahu (10)“ je 50–90 % výmery k.ú. (SR spolu 2,88 mil. ha) – NIE je to pôda nezistených vlastníkov
+  v zmysle SPF, pravdepodobne C-parcely bez LV. Na výber k.ú. NEPOUŽÍVAŤ (interpretácia neoverená).
+- ÚGKK CSV ROEP/PPÚ/VKM po k.ú. (data/raw/ugkk/roep_vkm_vmuo.csv): či má k.ú. ROEP, pozemkové úpravy, číselnú VKM.
+- Okresné úrady (minv.sk) pri pozemkových úpravách zverejňujú register pôvodného stavu (RPS) s LV, vlastníkmi a zoznamom
+  nezistených vlastníkov – len pre k.ú. s PPÚ, PDF, ručne.
 - GKÚ ZUOB – hranice zastavaného územia obce k 1.1.1990 (zákon 220/2004), GPKG EPSG:5514, línie po k.ú. (IDN5) →
   polygonize. Použité ako náhrada „intravilán“ (parcela = v zastavanom území, ak ≥ 50 % výmery leží vnútri).
 - ESKN REST polia (z verejného kódu, workflow 1): PARCEL_NUMBER, CADASTRAL_UNIT_ID (interné id k.ú., nie kód),
