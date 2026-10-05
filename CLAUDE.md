@@ -55,6 +55,11 @@ Stránky (pozemky/web, publikované ako artifacty):
 - `parcely_mapa.html` + `parcely/{ku}_{C|E}.geojson` (112 súborov, 96 MB, publikované v 2 dávkach ≤ 60 MB) – vlož čísla
   parciel z LV → výmera, zastavané územie, mapa (Leaflet z cdnjs, bez podkladových dlaždíc – CSP artifactu):
   https://claude.ai/artifact/Ghi4tP5spaMfMQ1vjgetWc
+- `velke_parcely.html` + `velke_parcely.json` (3 MB) – OTOČENÝ POSTUP: najväčšie parcely E (≥ 1 ha) a parcely ≥ 600 m²
+  v zastavanom území (E aj C) po k.ú., odkaz do ZBGIS; človek zadá číslo LV z mapy → stránka ho porovná so SPF
+  zoznamom (všetkých 18 175 LV koridoru s menami). Zadané LV sa pamätajú v localStorage.
+  Test LV 858 Nitrianska Streda (ručne na portáli): E 180/1 (1 144 m²) + 371 (2 780 m²), orná pôda, mimo ZÚ,
+  6 podielov (4/12, 4/12, 4×1/12), správa SPF → sedí s otvorenými dátami na m², ale nerentabilné.
 
 Poznámky k menám v SPF exporte: poznámka sa opakuje (`Meno (pozn.) D:(pozn.)` alebo `Meno, (pozn.) pozn.`),
 `ocisti_meno()` v skripte 04 ju odstráni. `č.d. 2310/20` = číslo denníka pozemkovej knihy (zápis/rok), NIE adresa.
@@ -107,6 +112,7 @@ Poznámky k menám v SPF exporte: poznámka sa opakuje (`Meno (pozn.) D:(pozn.)`
 - Overenie, či ESKN REST vracia číslo LV a druh pozemku: ČAKÁ na spustenie skriptu 03 zo SK IP (podľa verejného kódu
   vracia len FOLIO_ID = interné id, takže väzba k.ú.+LV → parcely pravdepodobne anonymne nejde).
 - Druh pozemku: v otvorených dátach nie je. Náhrady: zastavané územie (ZUOB), prípadne LPIS / krajinná pokrývka.
+- Captcha katastrálneho portálu sa NEOBCHÁDZA ani so súhlasom používateľa (prístupová kontrola, podmienky portálu).
 - GitHub Actions ako „iná IP“ na overenie ESKN REST: zablokované bezpečnostným klasifikátorom (obchádzanie sieťového
   obmedzenia) – nepoužívať. Pracovný postup: človek ručne prečíta čísla parciel z LV (1 LV = 1 nahliadnutie na portál)
   a vloží ich do parcely_mapa.html.
