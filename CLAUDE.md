@@ -17,6 +17,8 @@ python scripts/01_spf_stiahni_spoj.py --bez-stahovania   # len spojenie z data/r
 python scripts/02_ciselnik_ku.py               # číselník k.ú.->obec->okres->kraj + súhrny
 python scripts/03_zbgis_overenie.py --ku 845337            # ZBGIS overenie 1 k.ú. (len zo SK pripojenia)
 python scripts/03_zbgis_overenie.py --ku 845337 --len-schema  # len vypíše atribúty vrstiev
+python scripts/04_kandidati.py --medzi Nitra Topoľčany --okresy Nitra Topoľčany --sirka 6000 --tag nr_to
+                                               # kandidátne LV zo SPF pre koridor/okresy -> data/kandidati_<tag>.csv + web/kandidati_<tag>.json
 ```
 
 ## Dáta (pozemky/data)
@@ -29,8 +31,18 @@ python scripts/03_zbgis_overenie.py --ku 845337 --len-schema  # len vypíše atr
 | `spf_ku_suhrn.csv` | počet záznamov a LV na k.ú. + obec/okres/kraj | áno |
 | `spf_okres_suhrn.csv` | súhrn podľa okresov | áno |
 | `zbgis/` | výstupy skriptu 03 (schémy, parcely, spoj) | nie |
+| `kandidati_nr_to.csv` | LV v koridore Nitra–Topoľčany (56 k.ú.): `ku_kod, lv, pocet_nezist, s_udajom, s_umrtim, spf_pozn, mena, ku_nazov, obec, okres, os_dist` | áno |
+| `kandidati_nr_to_ku.csv` | súhrn po k.ú. (LV, mien, LV s ≥2 / 3–8 / ≥9 menami) | áno |
 
-Prehľadová stránka kroku 1: `pozemky/web/krok1_prehlad.html` (publikovaná ako artifact https://claude.ai/artifact/5K1SoTyaUq6e9Atp8wiKya).
+Stránky (pozemky/web, publikované ako artifacty):
+- `krok1_prehlad.html` – súhrn SPF zoznamu: https://claude.ai/artifact/5K1SoTyaUq6e9Atp8wiKya
+- `kandidati_nr_to.html` + `kandidati_nr_to.json` (načítava sa fetch-om ako supporting file) – LV Nitra–Topoľčany
+  s menami a filtrami: https://claude.ai/artifact/GF1YrRzxjKBeewiXwiKyBf
+  Pri republish treba JSON poslať v `files` s ABSOLÚTNOU cestou (cwd sa počas session mení).
+
+Poznámky k menám v SPF exporte: poznámka sa opakuje (`Meno (pozn.) D:(pozn.)` alebo `Meno, (pozn.) pozn.`),
+`ocisti_meno()` v skripte 04 ju odstráni. `č.d. 2310/20` = číslo denníka pozemkovej knihy (zápis/rok), NIE adresa.
+`r.`/`rod.` = rodné priezvisko, `malol.`/`mal.` = maloletý v čase zápisu, `(SPF)` = poznámka o správe SPF.
 
 ## Zdroje
 
