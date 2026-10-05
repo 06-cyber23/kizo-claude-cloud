@@ -58,6 +58,7 @@ Stránky (pozemky/web, publikované ako artifacty):
 - `velke_parcely.html` + `velke_parcely.json` (3 MB) – OTOČENÝ POSTUP: najväčšie parcely E (≥ 1 ha) a parcely ≥ 600 m²
   v zastavanom území (E aj C) po k.ú., odkaz do ZBGIS; človek zadá číslo LV z mapy → stránka ho porovná so SPF
   zoznamom (všetkých 18 175 LV koridoru s menami). Zadané LV sa pamätajú v localStorage.
+  https://claude.ai/artifact/XG4jDCkb2J65m4yU4bZSWB
   Test LV 858 Nitrianska Streda (ručne na portáli): E 180/1 (1 144 m²) + 371 (2 780 m²), orná pôda, mimo ZÚ,
   6 podielov (4/12, 4/12, 4×1/12), správa SPF → sedí s otvorenými dátami na m², ale nerentabilné.
 
