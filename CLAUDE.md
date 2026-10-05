@@ -21,7 +21,14 @@ python scripts/04_kandidati.py --medzi Nitra Topoľčany --okresy Nitra Topoľč
                                                # kandidátne LV zo SPF pre koridor/okresy -> data/kandidati_<tag>.csv + web/kandidati_<tag>.json
 python scripts/05_mena_struktura.py --vstup data/kandidati_nr_to.csv --tag nr_to --lv 840611:858
                                                # rozklad mien (priezvisko, rodné, manžel, nar., zom., č.d.) + rodinné klastre na LV
+python scripts/06_inspire_parcely.py --tag nr_to --ku-csv data/kandidati_nr_to_ku.csv \
+    --zip data/raw/inspire/NitrianskyC.zip data/raw/inspire/NitrianskyE.zip
+                                               # parcely C+E s výmerou, geometriou a príznakom intravilán (ZUOB) -> data/parcely_<tag>.parquet
 ```
+Zipy parciel: `curl -o data/raw/inspire/NitrianskyC.zip https://opendata.skgeodesy.sk/static/INSPIRE/Cadastral_parcels/NitrianskyC.zip`
+(C 294 MB, E 220 MB; celé SR SlovenskoC.zip 2,28 GB / SlovenskoE.zip 1,71 GB). ZUOB: `data/raw/zuob_gpkg.zip` z
+https://www.skgeodesy.sk/files/gku/produkty-sluzby/na-stiahnutie/zuob_gpkg.zip. GeoJSON pre web (web/parcely/*.geojson, 96 MB)
+sa generuje z parquetu ad hoc (kód v histórii session; nie je v gite – pozri web/parcely/index.csv).
 
 ## Dáta (pozemky/data)
 
@@ -37,12 +44,17 @@ python scripts/05_mena_struktura.py --vstup data/kandidati_nr_to.csv --tag nr_to
 | `kandidati_nr_to_ku.csv` | súhrn po k.ú. (LV, mien, LV s ≥2 / 3–8 / ≥9 menami) | áno |
 | `mena_nr_to.csv` | 1 riadok = 1 osoba zo SPF zoznamu v koridore, štruktúrované polia (heuristika) | áno |
 | `klastre_nr_to.csv` | rodinné klastre na LV (spojené cez kmeň priezviska / rodného priezviska, aj cez sobáš) | áno |
+| `parcely_nr_to.parquet` | 258 571 parciel (C 181 266, E 77 305) v 56 k.ú.: `ku_kod, register, parcela, vymera_m2 (úradná), vymera_geom_m2, lon, lat, intravilan_podiel, intravilan, wkb (EPSG:4258)` | áno (35 MB) |
+| `parcely_nr_to_ku.csv` | súhrn parciel po k.ú. a registri (počet, ha, v zastavanom území) | áno |
 
 Stránky (pozemky/web, publikované ako artifacty):
 - `krok1_prehlad.html` – súhrn SPF zoznamu: https://claude.ai/artifact/5K1SoTyaUq6e9Atp8wiKya
 - `kandidati_nr_to.html` + `kandidati_nr_to.json` (načítava sa fetch-om ako supporting file) – LV Nitra–Topoľčany
   s menami a filtrami: https://claude.ai/artifact/GF1YrRzxjKBeewiXwiKyBf
   Pri republish treba JSON poslať v `files` s ABSOLÚTNOU cestou (cwd sa počas session mení).
+- `parcely_mapa.html` + `parcely/{ku}_{C|E}.geojson` (112 súborov, 96 MB, publikované v 2 dávkach ≤ 60 MB) – vlož čísla
+  parciel z LV → výmera, zastavané územie, mapa (Leaflet z cdnjs, bez podkladových dlaždíc – CSP artifactu):
+  https://claude.ai/artifact/Ghi4tP5spaMfMQ1vjgetWc
 
 Poznámky k menám v SPF exporte: poznámka sa opakuje (`Meno (pozn.) D:(pozn.)` alebo `Meno, (pozn.) pozn.`),
 `ocisti_meno()` v skripte 04 ju odstráni. `č.d. 2310/20` = číslo denníka pozemkovej knihy (zápis/rok), NIE adresa.
@@ -64,7 +76,19 @@ Poznámky k menám v SPF exporte: poznámka sa opakuje (`Meno (pozn.) D:(pozn.)`
   (pole `PARCEL_NUMBER` potvrdené z verejného kódu; ostatné polia NEOVERENÉ)
 - INSPIRE OGC API Features: `https://inspirews.skgeodesy.sk/geoserver/cp/ogc/features/v1` (C),
   `.../cp_uo/ogc/features/v1` (E), kolekcia `CP.CadastralParcel` – podľa špecifikácie INSPIRE
-  obsahuje číslo parcely, výmeru, geometriu; **LV ani druh pozemku nie**.
+  obsahuje číslo parcely, výmeru, geometriu; **LV ani druh pozemku nie**. Hostiteľ odtiaľto blokovaný.
+- **INSPIRE HVD hromadné súbory (FUNGUJE odtiaľto):** https://opendata.skgeodesy.sk/static/INSPIRE/Cadastral_parcels/{Kraj}{C|E}.zip,
+  CC BY 4.0, aktualizácia štvrťročne (stav dát 30.09.2026), 1 GML na k.ú. (`{ku_kod}.gml`, INSPIRE CP 4.0, EPSG:4258,
+  posList = lat lon). Atribúty: cp:label (číslo parcely), cp:areaValue (úradná výmera m2), geometria,
+  nationalCadastralReference `{ku}_{parcela}.{C|E}`. Metadáta: rpi.gov.sk (API /api/collection_record/{id}),
+  C = 1d9ceaef-b3c6-4441-96df-a3ec353c7451, E = 36b39dd7-001a-4734-a98e-ee01aa9f7a96. V registri E sa to isté číslo
+  parcely môže v k.ú. vyskytnúť 2× (530 prípadov v koridore) – rozlíšiť polohou.
+- GKÚ ZUOB – hranice zastavaného územia obce k 1.1.1990 (zákon 220/2004), GPKG EPSG:5514, línie po k.ú. (IDN5) →
+  polygonize. Použité ako náhrada „intravilán“ (parcela = v zastavanom území, ak ≥ 50 % výmery leží vnútri).
+- ESKN REST polia (z verejného kódu, workflow 1): PARCEL_NUMBER, CADASTRAL_UNIT_ID (interné id k.ú., nie kód),
+  DESCRIPTIVE_AREA_OF_PARCEL, FOLIO_ID (interné id LV – NIE číslo LV), NATURE_OF_LAND_USE_ID (kód druhu 1–10).
+  `where=` blokuje WAF, funguje objectIds / priestorový dopyt; geoblok zahraničných IP. Číslo LV anonymne nedostupné;
+  LV/vlastníci len cez ESKN portál s prihlásením (od 1.7.2026; neoverené).
 
 ## Čo funguje
 
@@ -80,4 +104,9 @@ Poznámky k menám v SPF exporte: poznámka sa opakuje (`Meno (pozn.) D:(pozn.)`
   Pravdepodobne blokovanie zahraničných/dátacentrových IP → skript 03 spúšťať z notebooku (SK IP).
 - SPF zoznam neobsahuje podiel ani celkový počet spoluvlastníkov na LV – len mená nezistených
   vlastníkov (počet mien na LV sa dá spočítať). Podiel je v časti B LV (len katastrálny portál).
-- Overenie, či ESKN REST vracia číslo LV a druh pozemku: ČAKÁ na spustenie skriptu 03 zo SK IP.
+- Overenie, či ESKN REST vracia číslo LV a druh pozemku: ČAKÁ na spustenie skriptu 03 zo SK IP (podľa verejného kódu
+  vracia len FOLIO_ID = interné id, takže väzba k.ú.+LV → parcely pravdepodobne anonymne nejde).
+- Druh pozemku: v otvorených dátach nie je. Náhrady: zastavané územie (ZUOB), prípadne LPIS / krajinná pokrývka.
+- GitHub Actions ako „iná IP“ na overenie ESKN REST: zablokované bezpečnostným klasifikátorom (obchádzanie sieťového
+  obmedzenia) – nepoužívať. Pracovný postup: človek ručne prečíta čísla parciel z LV (1 LV = 1 nahliadnutie na portál)
+  a vloží ich do parcely_mapa.html.
