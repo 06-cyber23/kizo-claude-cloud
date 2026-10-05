@@ -1,0 +1,162 @@
+<title>Nezistení vlastníci Nitra–Topoľčany</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: filtre hore (lepia sa), pod nimi zoznam LV ako karty – na mobile sa číta po jednom LV, mená sú rozbaliteľné */
+:root{
+  --bg:#f5f7f4; --surface:#ffffff; --fg:#1c2620; --muted:#5d6b62; --line:#d9e0da;
+  --accent:#2f6b4f; --accent-soft:#e3efe8; --bar:#7fa98f;
+  --ok:#2f6b4f; --ok-bg:#e1f0e6; --warn:#8a5a00; --warn-bg:#fbefd5; --bad:#9b2c2c; --bad-bg:#f8e1e1;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121815; --surface:#19211d; --fg:#e4ebe6; --muted:#9aa9a0; --line:#2c3731;
+  --accent:#7cc39c; --accent-soft:#1f3329; --bar:#4f8a68;
+  --ok:#8fd3ab; --ok-bg:#1d3427; --warn:#f0c46b; --warn-bg:#3a2e14; --bad:#f19a9a; --bad-bg:#3d1f1f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121815; --surface:#19211d; --fg:#e4ebe6; --muted:#9aa9a0; --line:#2c3731;
+  --accent:#7cc39c; --accent-soft:#1f3329; --bar:#4f8a68;
+  --ok:#8fd3ab; --ok-bg:#1d3427; --warn:#f0c46b; --warn-bg:#3a2e14; --bad:#f19a9a; --bad-bg:#3d1f1f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);margin:0}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:24px 56px;display:flex;flex-direction:column;gap:26px}
+h1,h2{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(1.6rem,5vw,2.3rem);font-weight:800;line-height:1.1}
+h2{font-size:1.15rem;font-weight:700}
+.eyebrow{font:500 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}
+.head{display:flex;flex-direction:column;gap:8px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kpi{background:var(--surface);padding:12px 14px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi b{font:600 clamp(1.1rem,3.4vw,1.5rem) var(--f-mono);font-variant-numeric:tabular-nums;color:var(--accent)}
+.kpi span{font-size:.78rem;color:var(--muted)}
+@media (max-width:620px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+.note{border-left:3px solid var(--warn);background:var(--warn-bg);color:var(--fg);padding:10px 12px;border-radius:0 6px 6px 0;font-size:.9rem}
+.note b{color:var(--warn)}
+.filters{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);padding-block:8px;display:grid;grid-template-columns:1.3fr 1fr 1fr 1.3fr;gap:8px;border-bottom:1px solid var(--line)}
+@media (max-width:620px){.filters{grid-template-columns:1fr 1fr}}
+label.f{display:flex;flex-direction:column;gap:3px;font:500 .7rem var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-width:0}
+select,input{font:inherit;font-family:var(--f-body);font-size:.92rem;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);width:100%;min-width:0}
+select:focus-visible,input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.count{font:500 .8rem var(--f-mono);color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px}
+.lv{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;align-items:baseline;min-width:0}
+.lv .id{font:600 1rem var(--f-mono);font-variant-numeric:tabular-nums;color:var(--accent);white-space:nowrap}
+.lv .ku{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.lv .ku small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.lv .n{font:500 .74rem var(--f-mono);padding:3px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.lv details{grid-column:1/-1;min-width:0}
+.lv summary{cursor:pointer;font-size:.85rem;color:var(--muted);list-style:none;display:flex;gap:6px;align-items:center}
+.lv summary::before{content:"▸";font-size:.8rem}
+.lv details[open] summary::before{content:"▾"}
+.lv summary::-webkit-details-marker{display:none}
+.lv ol{margin:8px 0 2px;padding-left:1.4rem;font-size:.9rem;display:flex;flex-direction:column;gap:4px}
+.lv ol li{overflow-wrap:anywhere}
+.tip{border-color:var(--accent)}
+.tip .id::after{content:" tip";font:500 .65rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-left:6px}
+button.more{font:inherit;font-weight:600;padding:10px 16px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--accent);cursor:pointer;align-self:center}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);max-height:420px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:500 .68rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface);position:sticky;top:0}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--accent-soft)}
+code{font:.85em var(--f-mono);background:var(--accent-soft);padding:1px 5px;border-radius:3px}
+footer{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-reduced-motion:no-preference){.lv{transition:border-color .15s}}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div class="eyebrow">Projekt POZEMKY · test · SPF zoznam k 30.06.2026</div>
+    <h1>Nezistení vlastníci medzi Nitrou a Topoľčanmi</h1>
+    <p class="muted">Katastrálne územia okresov Nitra a Topoľčany do 6 km od osi Nitra–Topoľčany. Každý list vlastníctva (LV) s menami nezistených vlastníkov zo zoznamu SPF.</p>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="note"><b>Čo tu nie je:</b> výmera, druh pozemku, intravilán a podiely. SPF zoznam ich neobsahuje; ZBGIS služba je z cloudu nedostupná. Počet mien na LV je spodný odhad počtu spoluvlastníkov – na LV môžu byť aj známi vlastníci. Jedno LV si človek overí ručne na katastrálnom portáli (k.ú. + číslo LV).</div>
+
+  <section>
+    <h2>Tipy na dnešný test</h2>
+    <p class="muted">Po jednom LV z k.ú. rozložených od Nitry po Topoľčany: 3–6 nezistených vlastníkov, väčšina mien má rodné meno alebo inú stopu, k.ú. do 3,5 km od osi. Výber je mechanický, nie hodnotenie výnosnosti.</p>
+    <div class="list" id="tipy"></div>
+  </section>
+
+  <section>
+    <h2>Katastrálne územia</h2>
+    <p class="muted">Klepnutím na riadok sa nastaví filter nižšie.</p>
+    <div class="tbl"><table id="t-ku"></table></div>
+  </section>
+
+  <section>
+    <h2>Listy vlastníctva</h2>
+    <div class="filters">
+      <label class="f">k.ú.<select id="f-ku"><option value="">všetky</option></select></label>
+      <label class="f">min. mien<input type="number" id="f-min" min="1" value="3" inputmode="numeric"></label>
+      <label class="f">max. mien<input type="number" id="f-max" min="1" value="8" inputmode="numeric"></label>
+      <label class="f">meno<input type="search" id="f-q" placeholder="priezvisko…"></label>
+    </div>
+    <div class="count" id="count"></div>
+    <div class="list" id="list"></div>
+    <button class="more" id="more" hidden>Zobraziť ďalších 100</button>
+  </section>
+
+  <footer>Zdroj: Slovenský pozemkový fond – zoznam nezistených vlastníkov k 30.06.2026 (pozfond.sk); číselník k.ú. GKÚ (gn_csv.zip, CC-BY 4.0). Mená sú v tvare z exportu SPF, len bez opakovanej poznámky. Skript: <code>pozemky/scripts/04_kandidati.py</code>.</footer>
+</div>
+
+<script>
+const f = n => n.toLocaleString('sk-SK');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let D = null, view = [], shown = 0;
+const el = id => document.getElementById(id);
+
+function card(r, tip){
+  const [ku, kuN, okres, lv, n, , , mena] = r;
+  return `<article class="lv${tip?' tip':''}"><span class="id">LV ${lv}</span><span class="ku">${esc(kuN)}<small>k.ú. ${ku} · okres ${esc(okres)}</small></span><span class="n">${n} ${n===1?'meno':n<5?'mená':'mien'}</span>
+  <details><summary>Nezistení vlastníci</summary><ol>${mena.map(m=>`<li>${esc(m)}</li>`).join('')}</ol></details></article>`;
+}
+function render(reset){
+  if(reset){ shown = 0; el('list').innerHTML = ''; }
+  const next = view.slice(shown, shown+100);
+  el('list').insertAdjacentHTML('beforeend', next.map(r=>card(r,false)).join(''));
+  shown += next.length;
+  el('more').hidden = shown >= view.length;
+  el('count').textContent = `${f(view.length)} LV zodpovedá filtru${view.length>shown?`, zobrazených ${f(shown)}`:''}`;
+}
+function apply(){
+  const ku = el('f-ku').value, min = +el('f-min').value||1, max = +el('f-max').value||1e9, q = el('f-q').value.trim().toLowerCase();
+  view = D.lv.filter(r => (!ku || String(r[0])===ku) && r[4]>=min && r[4]<=max && (!q || r[7].some(m=>m.toLowerCase().includes(q))));
+  render(true);
+}
+function kuTable(){
+  const rows = [...D.ku].sort((a,b)=>b.lv_3_8-a.lv_3_8);
+  el('t-ku').innerHTML = '<thead><tr><th>k.ú.</th><th>Okres</th><th class="num">LV</th><th class="num">≥2 mien</th><th class="num">3–8</th><th class="num">≥9</th></tr></thead><tbody>'+
+    rows.map(k=>`<tr data-ku="${k.ku_kod}"><td>${esc(k.ku_nazov)}</td><td>${esc(k.okres)}</td><td class="num">${f(k.lv)}</td><td class="num">${f(k.lv_2plus)}</td><td class="num">${f(k.lv_3_8)}</td><td class="num">${f(k.lv_9plus)}</td></tr>`).join('')+'</tbody>';
+  el('t-ku').querySelectorAll('tbody tr').forEach(tr=>tr.addEventListener('click',()=>{el('f-ku').value=tr.dataset.ku; apply(); el('list').scrollIntoView({behavior:'smooth',block:'start'});}));
+}
+async function boot(){
+  try{
+    D = await (await fetch('kandidati_nr_to.json')).json();
+  }catch(e){
+    el('count').textContent = 'Dáta sa nepodarilo načítať.'; return;
+  }
+  const lv2 = D.lv.length, lv38 = D.lv.filter(r=>r[4]>=3&&r[4]<=8).length;
+  el('kpis').innerHTML = [[D.ku.length,'katastrálnych území'],[f(D.pocet_lv_spolu),'LV so SPF záznamom'],[f(lv2),'LV s ≥2 nezistenými'],[f(lv38),'LV s 3–8 nezistenými']]
+    .map(([b,s])=>`<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('');
+  el('tipy').innerHTML = (D.tipy||[]).map(t=>card([t[0],t[1],t[2],t[3],t[4],0,0,t[5]],true)).join('');
+  const sel = el('f-ku');
+  [...D.ku].sort((a,b)=>a.ku_nazov.localeCompare(b.ku_nazov,'sk')).forEach(k=>{const o=document.createElement('option');o.value=k.ku_kod;o.textContent=`${k.ku_nazov} (${k.okres})`;sel.appendChild(o);});
+  kuTable();
+  ['f-ku','f-min','f-max','f-q'].forEach(id=>el(id).addEventListener('input',apply));
+  el('more').addEventListener('click',()=>render(false));
+  apply();
+}
+boot();
+</script>
